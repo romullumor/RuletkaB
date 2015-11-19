@@ -22,12 +22,16 @@ import org.xml.sax.SAXException;
 
 
 public class RuletkaS {
+
+
+
     public static void main(String[] args) throws TransformerException, ParserConfigurationException, IOException, SAXException {
 
+        HashMap<String, String> cacheUser = new HashMap<String, String>();
+
         File file = new File("C:\\user.xml");
-        Document doc;
-        doc = OpenUserXML(file);
-        String[][] UserArray = LoadXMLUserToArray(doc);
+        Document doc = OpenUserXML(file);
+        LoadXMLUserToArray(doc, cacheUser);
 
 
         System.out.println("Приложение рулетка");
@@ -42,26 +46,55 @@ public class RuletkaS {
 
         System.out.println(login+"@"+pass);
 
-        if (FindUserInArray(login,pass,UserArray)==-1) WriteToXMLUser(login, pass, UserArray.length + 1, doc, file);
+        //if (FindUserInArray(login,pass,UserArray)==-1) WriteToXMLUser(login, pass, UserArray.length + 1, doc, file);
+        if (0 == FindUserInArray(login, pass, cacheUser)) {
+            cacheUser.put(login,pass);
+            System.out.println(convertToXML(cacheUser, "users"));
+
+        };
+        }
+
+
+        //System.out.println(Integer.toString(FindUserInArray(login,pass,cacheUser)));
 
     }
 
-    private static int FindUserInArray(String login, String pass, String[][] userArray) {
-        for (int i = 0; i < userArray.length ; i++) {
-            if (userArray[i][1] == login) {
-                if (userArray[i][0] == pass) {
-                    return i;
+    private static String convertToXML(HashMap<String, String> cache, String root) {
+        StringBuilder sb = new StringBuilder("<");
+        sb.append(root);
+        sb.append(">");
 
-                } else {
-                    System.out.println("Неверный пароль");
-                    return -2;
-                }
-            } else {
-                System.out.println("Несуществующий логин");
+        for (Map.Entry<String, String> e : cache.entrySet()) {
+            sb.append("<item name='");
+            sb.append(e.getKey());
+            sb.append("' pass='");
+            sb.append(e.getValue());
+            sb.append("' />");
+        }
+
+        sb.append("</");
+        sb.append(root);
+        sb.append(">");
+
+        return sb.toString();
+    }
+
+    private static int FindUserInArray(String login, String pass, HashMap<String, String> cache) {
+
+        if (cache.containsKey(login)){
+            if (Objects.equals(cache.get(login), pass)){
+                return 1;
+            }
+            else{
+                System.out.println("Неверный пароль");
                 return -1;
             }
         }
-        return -1;
+        else{
+            System.out.println("Несуществующий логин");
+            return 0;
+        }
+
     }
 
     private static Document OpenUserXML(File file) throws IOException, SAXException, ParserConfigurationException {
@@ -72,15 +105,7 @@ public class RuletkaS {
         return OpenUserXML;
     }
 
-    private static String[][] LoadXMLUserToArray(Document doc) throws IOException, SAXException, ParserConfigurationException {
-
-        doc.getDocumentElement().normalize();
-
-        NodeList nodeListID = doc.getElementsByTagName("userid");
-        Node IdNode = nodeListID.item(0);
-        Element elid=(Element)IdNode;
-        int idlist = Integer.parseInt(elid.getAttribute("id"));
-        String [][] baseuser = new String[idlist][2];
+    public static void LoadXMLUserToArray(Document doc, HashMap<String, String> cache ) throws IOException, SAXException, ParserConfigurationException {
 
         doc.getDocumentElement().normalize();
         NodeList nodeLst=doc.getElementsByTagName("item");
@@ -91,40 +116,34 @@ public class RuletkaS {
             if(fstNode.getNodeType()==Node.ELEMENT_NODE)
             {
                 Element elj=(Element)fstNode;
-                baseuser[je][0] = elj.getAttribute("name");
-                baseuser[je][1] = elj.getAttribute("pass");
+                cache.put(elj.getAttribute("pass"), elj.getAttribute("name"));
                 System.out.println(elj.getAttribute("pass")+"===="+elj.getAttribute("name"));
             }
         }
-        return baseuser;
+
     }
-
-
 
 
     private static void WriteToXMLUser(String login, String pass, int num, Document doc, File file) throws ParserConfigurationException, TransformerException {
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        Document document = factory.newDocumentBuilder().newDocument();
+
+       // DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+       // factory.setNamespaceAware(true);
+       // Document document = factory.newDocumentBuilder().newDocument();
 
         Element root = doc.createElement("users");
         Element item = doc.createElement("item");
 
         item.setAttribute("name",login);
         item.setAttribute("pass",pass);
-        item.setAttribute("id", Integer.toString(num));
+        item.setAttribute("id", Integer.toString(num+1));
 
         root.appendChild(item);
-
-        Element userid = document.createElement("userid");
-        userid.setAttribute("id", Integer.toString(num));
-        root.appendChild(userid);
 
         doc.appendChild(root);
 
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+       // transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.transform(new DOMSource(doc), new StreamResult(file));
     }
 }
