@@ -58,14 +58,27 @@ public class RuletkaS {
                 break;
             case OKUSER:
                 System.out.println("Продолжаем.....");
+                stepRuletka();
                 break;
         }
         ;
 
         }
 
+    private static void stepRuletka() {
+        Random step = new Random();
 
-        //System.out.println(Integer.toString(FindUserInArray(login,pass,cacheUser)));
+        int number = step.nextInt(46);
+        boolean color = step.nextBoolean();
+        if (color)
+            System.out.println("Красное - "+ number);
+        else
+            System.out.println("Черное - "+ number);
+
+    }
+
+
+    //System.out.println(Integer.toString(FindUserInArray(login,pass,cacheUser)));
 
         public static errorMsg findUser(String login, String pass) {
 
